@@ -747,9 +747,8 @@ void WbSolid::setSolidMerger() {
     return;
   }
 
-  const WbSolid *const us = jointParent() ? NULL : upperSolid();
-  const bool inherit = us && us->physics() && name().compare("right wheel", Qt::CaseInsensitive) != 0 &&
-                       name().compare("left wheel", Qt::CaseInsensitive) != 0;
+  const WbSolid *const us = jointParent() ? NULL : dynamic_cast<WbRobot *>(upperSolid());
+  const bool inherit = us && us->physics();
   mSolidMerger = inherit ? us->solidMerger() : QPointer<WbSolidMerger>(new WbSolidMerger(this));
 }
 
