@@ -54,7 +54,7 @@ static void vec_add(double result[3], const double b[3]) {
   result[2] += b[2];
 }
 
-// matrix * vector multiplicarion: result = m * v
+// matrix * vector multiplication: result = m * v
 void vec_rotate(double result[3], const double m[9], const double v[3]) {
   result[0] = m[0] * v[0] + m[1] * v[1] + m[2] * v[2];
   result[1] = m[3] * v[0] + m[4] * v[1] + m[5] * v[2];

@@ -184,7 +184,7 @@ In this example we seek to optimize the locomotion of a robot: it should walk as
 Suppose that the robot's locomotion depends on two parameters (a and b), hence we have a two-dimensional search space.
 
 In the code below, the evaluation of the a and b parameters is carried out in the `for` loop.
-In the third `for` the comments suggest an assumed function which will call the `wb_motor_set_postion` function for each motor involved in the locomotion.
+In the third `for` the comments suggest an assumed function which will call the `wb_motor_set_position` function for each motor involved in the locomotion.
 After each evaluation the distance travelled by the robot is measured and logged.
 Then the robot is moved (translation) back to its initial position (0, 0.5, 0) for the next evaluation.
 To move the robot we need the `wb_supervisor_*` functions and hence the `supervisor` field of the [Robot](../reference/robot.md) node should be `TRUE`.
