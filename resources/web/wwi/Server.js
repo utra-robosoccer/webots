@@ -78,7 +78,7 @@ export default class Server {
       this._view.stream = new Stream(url, this._view, this._onready);
       this._view.stream.connect();
     } else if (message.indexOf('controller:') === 0 || message.indexOf('reset controller:') === 0) {
-      // Need to keep it to avoid having an error message.
+      console.log('controller: ' + message);
     } else if (message.indexOf('queue:') === 0)
       console.log('The server is saturated. Queue to wait: ' + message.substring(6) + ' client(s).');
     else if (message === '.') { // received every 5 seconds when Webots is running
