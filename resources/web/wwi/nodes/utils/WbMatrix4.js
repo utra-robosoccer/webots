@@ -1,4 +1,5 @@
 import WbMatrix3 from './WbMatrix3.js';
+import WbVector3 from './WbVector3.js';
 import WbVector4 from './WbVector4.js';
 
 export default class WbMatrix4 {
@@ -113,4 +114,12 @@ export default class WbMatrix4 {
     this.m = [array[0], array[1], array[2], array[3], array[4], array[5], array[6], array[7], array[8], array[9], array[10],
       array[11], array[12], array[13], array[14], array[15]];
   }
+
+  sub3x3MatrixDot(vector) {
+    return new WbVector3(this.m[0] * this.vector.x() + this.m[1] * this.vector.y() + this.m[2] * this.vector.z(),
+      this.m[4] * this.vector.x() + this.m[5] * this.vector.y() + this.m[6] * this.vector.z(),
+      this.m[8] * this.vector.x() + this.m[9] * this.vector.y() + this.m[10] * this.vector.z());
+  }
+
+  translation() { return new WbVector3(this.m[3], this.m[7], this.m[11]); }
 }

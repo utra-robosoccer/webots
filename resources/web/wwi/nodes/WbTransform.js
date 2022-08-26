@@ -2,6 +2,7 @@ import WbGroup from './WbGroup.js';
 import WbWorld from './WbWorld.js';
 
 import {getAnId} from './utils/utils.js';
+import WbMatrix4 from './utils/WbMatrix4.js';
 
 export default class WbTransform extends WbGroup {
   constructor(id, translation, scale, rotation) {
@@ -66,5 +67,29 @@ export default class WbTransform extends WbGroup {
       _wr_node_delete(this.wrenNode);
 
     super.delete(isBoundingObject);
+  }
+
+  matrix() {
+    if (!this.matrix) {
+      this.matrix = new WbMatrix4();
+      this.updateMatrix();
+    } else if (this.matrixNeedUpdate) // TODO: check if used
+      this.updateMatrix();
+
+    return this.matrix;
+  }
+
+  updateMatrix() {
+    if (!this.matrix)
+      console.error('Matrix is not defined');
+
+    this.matrix.set(this.translation.x, this.translation.y, this.translation.z, this.rotation.x, this.rotation.y,
+      this.rotation.z, this.rotation.w, this.scale.x, this.scale.y, this.scale.z);
+
+    // multiply with upper matrix if any
+    const transform = this.upperTransform();
+    if (typeof transform !== 'undefined')
+      this.matrix = transform.matrix().mul(this.matrix);
+    this.matrixNeedUpdate = false;
   }
 }

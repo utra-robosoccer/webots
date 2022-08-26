@@ -477,6 +477,14 @@ export default class Parser {
       newNode = new WbTrackWheel(id, translation, scale, rotation, radius, inner);
 
       parentNode.wheelsList.push(newNode);
+    } else if (type === 'pen') {
+      const inkColor = convertStringToVec3(getNodeAttribute(node, 'inkColor', '0 0 0'));
+      const inkDensity = parseFloat(getNodeAttribute(node, 'inkDensity', '0.5'));
+      const leadSize = parseFloat(getNodeAttribute(node, 'leadSize', '0.002'));
+      const write = getNodeAttribute(node, 'write', '1') === '1';
+      const maxDistance = parseFloat(getNodeAttribute(node, 'maxDistance', '0'));
+
+      newNode = new WbPen(id, translation, scale, rotation, inkColor, inkDensity, leadSize, write, maxDistance);
     } else if (type === 'solid' || type === 'robot') {
       newNode = new WbSolid(id, translation, scale, rotation);
       if (type === 'robot') {

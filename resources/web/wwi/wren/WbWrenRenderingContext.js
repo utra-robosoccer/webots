@@ -1,6 +1,7 @@
 export default class WbWrenRenderingContext {}
 
 WbWrenRenderingContext.VF_INVISIBLE_FROM_CAMERA = 0x00000002; // flag for selected outlines
+WbWrenRenderingContext.VF_PEN_RAYS = 0x00000800; // flag for pen
 WbWrenRenderingContext.VF_NORMALS = 0x00040000; // Display mesh normals
 // no special renderings, i.e. no outlines and no optional renderings from menu selection
 WbWrenRenderingContext.VM_REGULAR = 0xFFF00000;
