@@ -191,3 +191,50 @@ void WbPen::applyOptionalRenderingToWren() {
   else
     wr_phong_material_set_color(mMaterial, disabledColor);
 }
+
+void WbPen::exportNodeFields(WbWriter &writer) const {
+  WbMatter::exportNodeFields(writer);
+  if (writer.isX3d()) {
+    if (!name().isEmpty())
+      writer << " name='" << sanitizedName() << "'";
+
+    writer << " type='pen'";
+
+    writer << " ";
+    writer.writeFieldStart("inkColor", true);
+    writer << mInkColor->value();
+    writer.writeFieldEnd(true);
+
+    writer << " ";
+    writer.writeFieldStart("inkDensity", true);
+    writer << mInkDensity->value();
+    writer.writeFieldEnd(true);
+
+    writer << " ";
+    writer.writeFieldStart("leadSize", true);
+    writer << mLeadSize->value();
+    writer.writeFieldEnd(true);
+
+    writer << " ";
+    writer.writeFieldStart("maxDistance", true);
+    writer << mMaxDistance->value();
+    writer.writeFieldEnd(true);
+
+    writer << " ";
+    writer.writeFieldStart("write", true);
+    writer << mWrite->value();
+    writer.writeFieldEnd(true);
+  }
+}
+
+QStringList WbPen::fieldsToSynchronizeWithX3D() const {
+  QStringList fields;
+  fields << "translation"
+         << "rotation"
+         << "inkColor"
+         << "inkDensity"
+         << "leadSize"
+         << "maxDistance"
+         << "write";
+  return fields;
+}

@@ -36,6 +36,8 @@ public:
   void handleMessage(QDataStream &) override;
   void prePhysicsStep(double ms) override;
   void reset(const QString &id) override;
+  void exportNodeFields(WbWriter &writer) const override;
+  QStringList fieldsToSynchronizeWithX3D() const override;
 
 private:
   WbSFBool *mWrite;
