@@ -104,7 +104,7 @@ private slots:
   void openProtoInTextEditor();
   void editProtoInTextEditor();
   void openTemplateInstanceInTextEditor();
-  void handleFieldEditorVisibility(bool isVisible);
+  void showFieldEditor(bool force = false);
 
   void del(WbNode *nodeToDel = NULL);
 
@@ -146,6 +146,7 @@ private:
   void cut();
   void copy();
   void paste();
+  void enableObjectViewActions(bool enabled);
 };
 
 #endif

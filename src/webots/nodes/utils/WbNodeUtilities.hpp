@@ -122,6 +122,8 @@ namespace WbNodeUtilities {
 
   // find (innermost) enclosing PROTO if any
   WbProtoModel *findContainingProto(const WbNode *node);
+  const WbNode *findFieldProtoScope(const WbField *field, const WbNode *proto);
+  const WbField *findClosestParameterInProto(const WbField *field, const WbNode *proto);
 
   // find root PROTO node if any
   WbNode *findRootProtoNode(WbNode *const node);
@@ -144,8 +146,6 @@ namespace WbNodeUtilities {
   bool existsVisibleProtoNodeNamed(const QString &modelName);
   // return the list of PROTO nodes "visible" in the world (skipping default PROTO parameters)
   QList<const WbNode *> protoNodesInWorldFile(const WbNode *root);
-
-  WbAbstractTransform *abstractTransformCast(WbBaseNode *node);
 
   //////////////////////////////
   // Non-permanent properties //

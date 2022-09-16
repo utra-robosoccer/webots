@@ -125,6 +125,7 @@ WbSceneTree::WbSceneTree(QWidget *parent) :
   connect(mActionManager->action(WbAction::MOVE_VIEWPOINT_TO_OBJECT), &QAction::triggered, this,
           &WbSceneTree::moveViewpointToObject);
   connect(mActionManager->action(WbAction::RESET_VALUE), &QAction::triggered, this, &WbSceneTree::reset);
+  connect(mActionManager->action(WbAction::EDIT_FIELD), &QAction::triggered, this, &WbSceneTree::showFieldEditor);
   connect(mActionManager->action(WbAction::CONVERT_TO_BASE_NODES), &QAction::triggered, this, &WbSceneTree::convertToBaseNode);
   connect(mActionManager->action(WbAction::CONVERT_ROOT_TO_BASE_NODES), &QAction::triggered, this,
           &WbSceneTree::convertRootToBaseNode);
@@ -268,7 +269,7 @@ void WbSceneTree::setWorld(WbWorld *world) {
 void WbSceneTree::showExternProtoPanel() {
   clearSelection();
   // uncollapse the field editor
-  handleFieldEditorVisibility(true);
+  showFieldEditor(true);
   emit nodeSelected(NULL);
   mFieldEditor->editExternProto();
 }
@@ -299,9 +300,10 @@ void WbSceneTree::handleUserCommand(WbAction::WbActionKind actionKind) {
 
 void WbSceneTree::cut() {
   if (mSelectedItem->isNode()) {
-    if (WbProtoManager::instance()->externProtoCutBuffer())
+    const QList<const WbNode *> cutNodes = WbNodeUtilities::protoNodesInWorldFile(mSelectedItem->node());
+    if (!WbProtoManager::instance()->externProtoCutBuffer().isEmpty())
       WbProtoManager::instance()->clearExternProtoCutBuffer();
-    WbProtoManager::instance()->saveToExternProtoCutBuffer(mSelectedItem->node()->modelName());
+    WbProtoManager::instance()->saveToExternProtoCutBuffer(cutNodes);
   }
   copy();
   del();
@@ -341,9 +343,9 @@ void WbSceneTree::paste() {
   if (!mSelectedItem)
     return;
 
-  const WbExternProto *cutBuffer = WbProtoManager::instance()->externProtoCutBuffer();
-  if (cutBuffer)
-    WbProtoManager::instance()->declareExternProto(cutBuffer->name(), cutBuffer->url(), cutBuffer->isImportable(), true);
+  const QList<WbExternProto *> cutBuffer = WbProtoManager::instance()->externProtoCutBuffer();
+  foreach (const WbExternProto *item, cutBuffer)
+    WbProtoManager::instance()->declareExternProto(item->name(), item->url(), item->isImportable());
 
   if (mSelectedItem->isField() && mSelectedItem->field()->isSingle())
     pasteInSFValue();
@@ -745,6 +747,20 @@ void WbSceneTree::convertProtoToBaseNode(bool rootOnly) {
       writer.setRootNode(NULL);
     currentNode->write(writer);
 
+    // relative urls that get exposed by the conversion need to be changed to remote ones
+    QRegularExpressionMatchIterator it = WbUrl::vrmlResourceRegex().globalMatch(nodeString);
+    while (it.hasNext()) {
+      const QRegularExpressionMatch match = it.next();
+      if (match.hasMatch()) {
+        QString asset = match.captured(0);
+        asset.replace("\"", "");
+        if (!WbUrl::isWeb(asset) && QDir::isRelativePath(asset)) {
+          QString newUrl = QString("\"%1\"").arg(WbUrl::combinePaths(asset, currentNode->proto()->url()));
+          nodeString.replace(QString("\"%1\"").arg(asset), newUrl.replace(WbStandardPaths::webotsHomePath(), "webots://"));
+        }
+      }
+    }
+
     const bool skipTemplateRegeneration =
       WbNodeUtilities::findUpperTemplateNeedingRegenerationFromField(parentField, parentNode);
     if (skipTemplateRegeneration)
@@ -758,7 +774,7 @@ void WbSceneTree::convertProtoToBaseNode(bool rootOnly) {
     // declare PROTO nodes that have become visible at the world level
     QPair<QString, QString> item;
     foreach (item, writer.declarations()) {
-      const QString previousUrl(WbProtoManager::instance()->declareExternProto(item.first, item.second, false, false, false));
+      const QString previousUrl(WbProtoManager::instance()->declareExternProto(item.first, item.second, false, false));
       if (!previousUrl.isEmpty())
         WbLog::warning(tr("Conflicting declarations for '%1' are provided: %2 and %3, the first one will be used. "
                           "To use the other instead you will need to change it manually in the world file.")
@@ -1076,9 +1092,16 @@ void WbSceneTree::clearSelection() {
 
   mFieldEditor->setTitle("");
   mFieldEditor->editField(NULL, NULL);
+}
 
-  // collapse the field editor
-  handleFieldEditorVisibility(false);
+void WbSceneTree::enableObjectViewActions(bool enabled) {
+  mActionManager->action(WbAction::MOVE_VIEWPOINT_TO_OBJECT)->setEnabled(enabled);
+  mActionManager->action(WbAction::OBJECT_FRONT_VIEW)->setEnabled(enabled);
+  mActionManager->action(WbAction::OBJECT_BACK_VIEW)->setEnabled(enabled);
+  mActionManager->action(WbAction::OBJECT_RIGHT_VIEW)->setEnabled(enabled);
+  mActionManager->action(WbAction::OBJECT_LEFT_VIEW)->setEnabled(enabled);
+  mActionManager->action(WbAction::OBJECT_TOP_VIEW)->setEnabled(enabled);
+  mActionManager->action(WbAction::OBJECT_BOTTOM_VIEW)->setEnabled(enabled);
 }
 
 void WbSceneTree::updateSelection() {
@@ -1098,8 +1121,9 @@ void WbSceneTree::updateSelection() {
   QModelIndex currentIndex = mTreeView->currentIndex();
   if (!currentIndex.isValid()) {
     mSelectedItem = NULL;
-    mActionManager->action(WbAction::MOVE_VIEWPOINT_TO_OBJECT)->setEnabled(false);
+    enableObjectViewActions(false);
     mActionManager->action(WbAction::OPEN_HELP)->setEnabled(false);
+    mActionManager->action(WbAction::EDIT_FIELD)->setEnabled(false);
     updateToolbar();
     // no item selected
     return;
@@ -1107,8 +1131,9 @@ void WbSceneTree::updateSelection() {
   mSelectedItem = mModel->indexToItem(currentIndex);
   if (mSelectedItem->isInvalid()) {
     mSelectedItem = NULL;
-    mActionManager->action(WbAction::MOVE_VIEWPOINT_TO_OBJECT)->setEnabled(false);
+    enableObjectViewActions(false);
     mActionManager->action(WbAction::OPEN_HELP)->setEnabled(false);
+    mActionManager->action(WbAction::EDIT_FIELD)->setEnabled(false);
     updateToolbar();
     return;
   }
@@ -1130,6 +1155,7 @@ void WbSceneTree::updateSelection() {
     mFieldEditor->editField(node, mSelectedItem->parent()->field(), mSelectedItem->row());
   }
 
+  mActionManager->action(WbAction::EDIT_FIELD)->setEnabled(mSplitter->sizes()[2] == 0);
   WbContextMenuGenerator::enableNodeActions(mSelectedItem->isNode());
   WbContextMenuGenerator::enableRobotActions(mSelectedItem->node() &&
                                              WbNodeUtilities::isRobotTypeName(mSelectedItem->node()->nodeModelName()));
@@ -1161,16 +1187,15 @@ void WbSceneTree::updateSelection() {
       baseNode = NULL;
 
     // enable move viewpoint to object if the item has a corresponding bounding sphere
-    mActionManager->action(WbAction::MOVE_VIEWPOINT_TO_OBJECT)
-      ->setEnabled(baseNode && WbNodeUtilities::boundingSphereAncestor(baseNode) != NULL &&
-                   baseNode->nodeType() != WB_NODE_BILLBOARD &&
-                   !WbNodeUtilities::findUpperNodeByType(baseNode, WB_NODE_BILLBOARD));
+    enableObjectViewActions(baseNode && WbNodeUtilities::boundingSphereAncestor(baseNode) != NULL &&
+                            baseNode->nodeType() != WB_NODE_BILLBOARD &&
+                            !WbNodeUtilities::findUpperNodeByType(baseNode, WB_NODE_BILLBOARD));
     mActionManager->action(WbAction::OPEN_HELP)->setEnabled(baseNode);
     emit nodeSelected(baseNode);
   }
 
   // uncollapse the field editor
-  handleFieldEditorVisibility(true);
+  showFieldEditor();
 }
 
 void WbSceneTree::startWatching(const QModelIndex &index) {
@@ -1480,10 +1505,14 @@ void WbSceneTree::handleDoubleClickOrEnterPress() {
            (mSelectedItem->isField() && !mSelectedItem->isSFNode() && !mSelectedItem->field()->isMultiple()))
     mFieldEditor->currentEditor()->takeKeyboardFocus();
   // default behavior, collapse/expand tree item
-  else if (mTreeView->isExpanded(mTreeView->currentIndex()))
-    mTreeView->collapse(mTreeView->currentIndex());
-  else
+  else if (!mTreeView->isExpanded(mTreeView->currentIndex()))
     mTreeView->expand(mTreeView->currentIndex());
+  else {
+    mTreeView->collapse(mTreeView->currentIndex());
+    return;  // do not show field editor when collasping tree item
+  }
+
+  showFieldEditor(true);
 }
 
 void WbSceneTree::refreshTreeView() {
@@ -1573,17 +1602,19 @@ void WbSceneTree::openTemplateInstanceInTextEditor() {
     emit editRequested(file.fileName());
 }
 
-void WbSceneTree::handleFieldEditorVisibility(bool isVisible) {
+void WbSceneTree::showFieldEditor(bool force) {
+  if (dynamic_cast<QAction *>(sender()) != NULL)
+    force = true;
+  static bool hiddenByUser = false;
   const QList<int> currentSize = mSplitter->sizes();
-  QList<int> sizes;
-  int newSize;
-  if (isVisible && currentSize[2] == 0)
-    newSize = 1;
-  else if (!isVisible && currentSize[2] != 0)
-    newSize = 0;
-  else
+  if (currentSize[2] != 0) {
+    hiddenByUser = true;
     return;
-  sizes << currentSize[0] << (mSplitter->height() - newSize) << newSize;
+  }
+  if (!force && hiddenByUser)
+    return;
+  QList<int> sizes;
+  sizes << currentSize[0] << (mSplitter->height() - 1) << 1;
   mSplitter->setSizes(sizes);
   mSplitter->setHandleWidth(mHandleWidth);
   return;

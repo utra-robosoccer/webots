@@ -245,8 +245,9 @@ WbNode::WbNode(const WbNode &other) :
         // create an instance of a non-PROTO parameter node
         field = new WbField(parameterNodeField->model(), this);
         field->redirectTo(parameterNodeField);
+        field->setScope(parameterNodeField->scope());
 
-        if (!other.mProto && gDerivedProtoAncestorFlag && !gTopParameterFlag)
+        if (!other.mProto && gDerivedProtoAncestorFlag)
           field->setAlias(parameterNodeField->alias());
       }
 
@@ -768,7 +769,7 @@ void WbNode::notifyFieldChanged() {
   WbField *const field = static_cast<WbField *>(sender());
 
   WbField *const parentField = this->parentField();
-  if (parentField && isProtoParameterNode())
+  if (parentField && parentField->parameter() && isProtoParameterNode())
     emit parentField->parentNode()->parameterChanged(parentField);
 
   if (mIsBeingDeleted || cUpdatingDictionary) {
@@ -949,6 +950,9 @@ void WbNode::readFields(WbTokenizer *tokenizer, const QString &worldPath) {
     if (!field)
       tokenizer->skipField();
     else {
+      const QString &referral = tokenizer->referralFile().isEmpty() ? tokenizer->fileName() : tokenizer->referralFile();
+      field->setScope(referral);
+
       if (tokenizer->peekWord() == "IS") {
         tokenizer->skipToken("IS");
         const QString &alias = tokenizer->nextWord();
@@ -1083,8 +1087,8 @@ void WbNode::write(WbWriter &writer) const {
 // This function lists only the texture files which are explicitly referred to in
 // this world file and not the one implicitly referred to by included PROTO files.
 // This list may contain duplicate texture files.
-QStringList WbNode::listTextureFiles() const {
-  QStringList list;
+QList<QPair<QString, WbMFString *>> WbNode::listTextureFiles() const {
+  QList<QPair<QString, WbMFString *>> list;
   bool imageTexture = model()->name() == "ImageTexture";
   const QString currentTexturePath = WbProject::current()->worldsPath();
   foreach (WbField *field, fields())
@@ -1110,10 +1114,28 @@ QStringList WbNode::listTextureFiles() const {
         if (proto && QFile::exists(protoPath + textureFile))  // PROTO texture
           continue;                                           // skip it
         if (QFile::exists(currentTexturePath + textureFile))
-          list << textureFile;
+          list << QPair<QString, WbMFString *>(textureFile, mfstring);
       }
     }
   return list;
+}
+
+const WbNode *WbNode::containingProto(bool skipThis) const {
+  const WbNode *n = this;
+  while (n) {
+    const WbProtoModel *protoModel = n->proto();
+    if (protoModel && (!skipThis || n != this))
+      return n;
+    else {
+      const WbNode *ppn = n->protoParameterNode();
+      if (ppn && ppn->proto() && (!skipThis || ppn->proto() != proto()))
+        return ppn;
+
+      n = n->parentNode();
+    }
+  }
+
+  return NULL;
 }
 
 const QString WbNode::urdfName() const {
@@ -1223,6 +1245,17 @@ void WbNode::exportNodeContents(WbWriter &writer) const {
 void WbNode::exportExternalSubProto(WbWriter &writer) const {
   if (!isProtoInstance())
     return;
+
+  // find all proto that were already exposed prior to converting the root (typically, slots with world visibility)
+  const QList<const WbNode *> protos = WbNodeUtilities::protoNodesInWorldFile(this);
+  foreach (const WbNode *p, protos) {
+    // the node itself doesn't need to be re-declared since it won't exist after conversion
+    if (p != this) {
+      const QString protoDeclaration = WbProtoManager::instance()->externProtoUrl(p, false);
+      assert(!protoDeclaration.isEmpty());  // since the proto has world-visibility, a declaration for it must exist
+      writer.trackDeclaration(p->modelName(), protoDeclaration);
+    }
+  }
 
   addExternProtoFromFile(mProto, writer);
 }
@@ -1347,10 +1380,13 @@ void WbNode::redirectAliasedFields(WbField *param, WbNode *protoInstance, bool s
   // search self
   foreach (WbField *field, fields) {
     if (field->alias() == param->name() && field->type() == param->type()) {
+      field->setScope(param->scope());
+
       // set parent node
       WbNode *tmpParent = gParent;
       gParent = this;
       bool tmpProtoFlag = gProtoParameterNodeFlag;
+
       if (copyValueOnly) {
         field->copyValueFrom(param);
         // reset alias value so that the value is copied when node is cloned
@@ -1524,6 +1560,7 @@ WbNode *WbNode::createProtoInstance(WbProtoModel *proto, WbTokenizer *tokenizer,
   QListIterator<WbFieldModel *> fieldModelsIt(protoFieldModels);
   while (fieldModelsIt.hasNext()) {
     WbField *defaultParameter = new WbField(fieldModelsIt.next(), NULL);
+    defaultParameter->setScope(proto->url());
     parameters.append(defaultParameter);
 
     parametersDefMap.append(QMap<QString, WbNode *>());
@@ -1608,6 +1645,7 @@ WbNode *WbNode::createProtoInstance(WbProtoModel *proto, WbTokenizer *tokenizer,
 
       if (parameterModel) {
         WbField *parameter = new WbField(parameterModel, NULL);
+        parameter->setScope(tokenizer->referralFile());
 
         bool toBeDeleted = parameterNames.contains(parameter->name());
         if (toBeDeleted)
@@ -1705,7 +1743,6 @@ WbNode *WbNode::createProtoInstanceFromParameters(WbProtoModel *proto, const QVe
   ProtoParameters *p = new ProtoParameters;
   p->params = &parameters;
   gProtoParameterList << p;
-
   const bool previousFlag = gProtoParameterNodeFlag;
   gProtoParameterNodeFlag = false;
 
