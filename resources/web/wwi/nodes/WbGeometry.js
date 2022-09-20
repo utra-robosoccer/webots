@@ -48,6 +48,15 @@ export default class WbGeometry extends WbBaseNode {
     super.delete();
   }
 
+  postFinalize() {
+    super.postFinalize();
+
+    this.boundingSphere = new WbBoundingSphere(this);
+    this.recomputeBoundingSphere();
+  }
+
+  recomputeBoundingSphere() {}
+
   setPickable(pickable) {
     if (typeof this._wrenRenderable === 'undefined' || this.isInBoundingObject())
       return;
@@ -62,13 +71,6 @@ export default class WbGeometry extends WbBaseNode {
       _wr_renderable_set_material(this._wrenRenderable, material, null);
       this.computeCastShadows(castShadows);
     }
-  }
-
-  postFinalize() {
-    super.postFinalize();
-
-    this.boundingSphere = new WbBoundingSphere(this);
-    this.recomputeBoundingSphere();
   }
 
   updateBoundingObjectVisibility() {

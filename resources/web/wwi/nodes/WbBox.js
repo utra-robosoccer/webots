@@ -1,4 +1,5 @@
 import WbGeometry from './WbGeometry.js';
+import WbBoundingSphere from './utils/WbBoundingSphere.js';
 import {resetVector3IfNonPositive} from './utils/WbFieldChecker.js';
 import WbVector3 from './utils/WbVector3.js';
 
@@ -36,6 +37,10 @@ export default class WbBox extends WbGeometry {
     super.delete();
   }
 
+  recomputeBoundingSphere() {
+    this.boundingSphere.set(new WbVector3(), this.size.length() / 2.0);
+  }
+
   updateLineScale() {
     if (!this._isAValidBoundingObject())
       return;
@@ -53,6 +58,9 @@ export default class WbBox extends WbGeometry {
       this.updateLineScale();
     else
       _wr_transform_set_scale(this.wrenNode, _wrjs_array3(this.size.x, this.size.y, this.size.z));
+
+    if (this.boundingSphere && !this.isInBoundingObject())
+      this.boundingSphere.setOwnerSizeChanged();
   }
 
   _sanitizeFields() {
