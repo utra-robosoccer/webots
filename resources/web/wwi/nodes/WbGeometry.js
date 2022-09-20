@@ -1,5 +1,6 @@
 import WbBaseNode from './WbBaseNode.js';
 import WbWorld from './WbWorld.js';
+import WbBoundingSphere from './utils/WbBoundingSphere.js';
 import {isDescendantOfBillboard} from './utils/utils.js';
 import WbWrenMeshBuffers from './utils/WbWrenMeshBuffers.js';
 import WbWrenPicker from './../wren/WbWrenPicker.js';
@@ -13,6 +14,10 @@ export default class WbGeometry extends WbBaseNode {
 
     this.pickable = false;
     this._isShadedGeometryPickable = true;
+  }
+
+  boundingSphere() {
+    return this.boundingSphere;
   }
 
   computeCastShadows(enabled) {
@@ -36,6 +41,10 @@ export default class WbGeometry extends WbBaseNode {
     if (this.wrenObjectsCreatedCalled)
       this._deleteWrenRenderable();
 
+    //TODO necessary?
+    if (this.boundingSphere)
+      this.boundingSphere.delete();
+
     super.delete();
   }
 
@@ -53,6 +62,13 @@ export default class WbGeometry extends WbBaseNode {
       _wr_renderable_set_material(this._wrenRenderable, material, null);
       this.computeCastShadows(castShadows);
     }
+  }
+
+  postFinalize() {
+    super.postFinalize();
+
+    this.boundingSphere = new WbBoundingSphere(this);
+    this.recomputeBoundingSphere();
   }
 
   updateBoundingObjectVisibility() {

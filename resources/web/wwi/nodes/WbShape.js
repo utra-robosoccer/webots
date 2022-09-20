@@ -38,6 +38,13 @@ export default class WbShape extends WbBaseNode {
     }
   }
 
+  boundingSphere() {
+    if (this.geometry)
+      return this.geometry.boundingSphere();
+
+    return undefined;
+  }
+
   clone(customID) {
     let geometry, appearance;
     if (typeof this.geometry !== 'undefined') {

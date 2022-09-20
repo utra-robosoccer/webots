@@ -85,4 +85,8 @@ export default class WbBaseNode {
   postFinalize() {
     this.isPostFinalizeCalled = true;
   }
+
+  boundingSphere() {
+    return undefined;
+  }
 }

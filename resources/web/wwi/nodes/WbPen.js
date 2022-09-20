@@ -30,8 +30,8 @@ export default class WbPen extends WbSolid {
       const m = super.matrix();
       const globalDirection = m.sub3x3MatrixDot(new WbVector3(0, 0, -1));
       const ray = new WbRay(m.translation(), globalDirection);
-    //   double distance;
-    //   const WbShape *shape = WbNodeUtilities::findIntersectingShape(ray, maxDistance, distance);
+      // let distance;
+      // const WbShape *shape = WbNodeUtilities::findIntersectingShape(ray, maxDistance, distance);
     //
     //   if (shape && WbPaintTexture::isPaintable(shape)) {
     //     if (!mLastPaintTexture || shape != mLastPaintTexture->shape())

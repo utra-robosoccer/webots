@@ -197,6 +197,26 @@ function clampedAcos(value) {
   return Math.acos(value);
 }
 
+function findIntersectingShape(ray, maxDistance, minDistance = 0) {
+  timeStep = WbWorld.instance.basicTimeStep;
+
+  const childCount = World.instance.sceneTree.length;
+
+  let distance = maxDistance;
+  let shape;
+  for (let i = 0; i < childCount; ++i) {
+    let boundingSphere = World.instance.sceneTree[i].boundingSphere();
+  //   if (bs == NULL)
+  //     continue;
+  //   WbBoundingSphere::IntersectingShape res = bs->computeIntersection(ray, timeStep);
+  //   if (res.shape != NULL && res.distance < distance && res.distance > minDistance) {
+  //     distance = res.distance;
+  //     shape = res.shape;
+  //   }
+  // }
+  return {distance, shape};
+}
+
 export {array3Pointer, arrayXPointer, arrayXPointerInt, arrayXPointerFloat, pointerOnFloat, direction, up, right, length,
   vec4ToQuaternion, quaternionToVec4, fromAxisAngle, findUpperTransform, nodeIsInBoundingObject, isDescendantOfBillboard,
-  getAncestor, getAnId, clampedAcos};
+  getAncestor, getAnId, clampedAcos, findIntersectingShape};
