@@ -12,23 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include ../../resources/Makefile.os.include
+from controller.wb import wb
+from controller.device import Device
+import ctypes
+from typing import Union
 
-.PHONY: release debug profile
 
-release debug profile clean:
-	@echo "#"
-	@echo "# C controller library ("$@")"
-	@echo "#"
-	@+make -s -C c $@
-	@echo "#"
-	@echo "# C++ controller library ("$@")"
-	@echo "#"
-	@+make -s -C cpp $@
-	@echo "#"
-	@echo "# Java controller library ("$@")"
-	@echo "#"
-	@+make -s -C java $@
-	@echo "# Matlab controller library ("$@")"
-	@echo "#"
-	@+make -s -C matlab $@
+class Pen(Device):
+    def __init__(self, name: Union[str, int]):
+        super().__init__(name)
+
+    def write(self, write: bool):
+        wb.wb_pen_write(self._tag, 1 if write else 0)
+
+    def setInkColor(self, color: int, density: float):
+        wb.wb_pen_set_ink_color(self._tag, color, ctypes.c_double(density))

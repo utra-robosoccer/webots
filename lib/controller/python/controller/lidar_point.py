@@ -12,23 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include ../../resources/Makefile.os.include
+import struct
 
-.PHONY: release debug profile
 
-release debug profile clean:
-	@echo "#"
-	@echo "# C controller library ("$@")"
-	@echo "#"
-	@+make -s -C c $@
-	@echo "#"
-	@echo "# C++ controller library ("$@")"
-	@echo "#"
-	@+make -s -C cpp $@
-	@echo "#"
-	@echo "# Java controller library ("$@")"
-	@echo "#"
-	@+make -s -C java $@
-	@echo "# Matlab controller library ("$@")"
-	@echo "#"
-	@+make -s -C matlab $@
+class LidarPoint:
+    def __init__(self, data: bytes, offset):
+        t = struct.unpack_from('fffif', data, offset * 20)
+        self.x = t[0]
+        self.y = t[1]
+        self.z = t[2]
+        self.layer = t[3]
+        self.time = t[4]

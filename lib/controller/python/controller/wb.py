@@ -12,23 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include ../../resources/Makefile.os.include
+import ctypes
+import os
+import sys
 
-.PHONY: release debug profile
+if sys.platform == 'linux' or sys.platform == 'linux2':
+    path = os.path.join('lib', 'controller', 'libController.so')
+elif sys.platform == 'win32':
+    path = os.path.join('lib', 'controller', 'Controller.dll')
+elif sys.platform == 'darwin':
+    path = os.path.join('Contents', 'MacOS', 'lib', 'controller', 'libController.dylib')
 
-release debug profile clean:
-	@echo "#"
-	@echo "# C controller library ("$@")"
-	@echo "#"
-	@+make -s -C c $@
-	@echo "#"
-	@echo "# C++ controller library ("$@")"
-	@echo "#"
-	@+make -s -C cpp $@
-	@echo "#"
-	@echo "# Java controller library ("$@")"
-	@echo "#"
-	@+make -s -C java $@
-	@echo "# Matlab controller library ("$@")"
-	@echo "#"
-	@+make -s -C matlab $@
+wb = ctypes.cdll.LoadLibrary(os.path.join(os.environ['WEBOTS_HOME'], path))

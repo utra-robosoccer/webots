@@ -12,23 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include ../../resources/Makefile.os.include
+from controller.sensor import Sensor
+from controller.wb import wb
+import ctypes
+import typing
 
-.PHONY: release debug profile
 
-release debug profile clean:
-	@echo "#"
-	@echo "# C controller library ("$@")"
-	@echo "#"
-	@+make -s -C c $@
-	@echo "#"
-	@echo "# C++ controller library ("$@")"
-	@echo "#"
-	@+make -s -C cpp $@
-	@echo "#"
-	@echo "# Java controller library ("$@")"
-	@echo "#"
-	@+make -s -C java $@
-	@echo "# Matlab controller library ("$@")"
-	@echo "#"
-	@+make -s -C matlab $@
+class Altimeter(Sensor):
+    wb.wb_altimeter_get_value.restype = ctypes.c_double
+
+    def __init__(self, name: typing.Union[str, int], sampling_period: int = None):
+        self._enable = wb.wb_altimeter_enable
+        self._get_sampling_period = wb.wb_altimeter_get_sampling_period
+        super().__init__(name, sampling_period)
+
+    def getValue(self) -> float:
+        return self.value
+
+    @property
+    def value(self) -> float:
+        return wb.wb_altimeter_get_value(self._tag)

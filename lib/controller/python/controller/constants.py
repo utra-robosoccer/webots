@@ -12,23 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include ../../resources/Makefile.os.include
+import ctypes
+from controller.wb import wb
 
-.PHONY: release debug profile
 
-release debug profile clean:
-	@echo "#"
-	@echo "# C controller library ("$@")"
-	@echo "#"
-	@+make -s -C c $@
-	@echo "#"
-	@echo "# C++ controller library ("$@")"
-	@echo "#"
-	@+make -s -C cpp $@
-	@echo "#"
-	@echo "# Java controller library ("$@")"
-	@echo "#"
-	@+make -s -C java $@
-	@echo "# Matlab controller library ("$@")"
-	@echo "#"
-	@+make -s -C matlab $@
+def constant(name, type=int):
+    if type == int:
+        return ctypes.c_int.in_dll(wb, 'wb_' + name).value
+    if type == str:
+        return ctypes.c_char_p.in_dll(wb, 'wb_' + name).value.decode()
