@@ -12,8 +12,10 @@ import WbWrenGtao from '../wren/WbWrenGtao.js';
 import WbWrenBloom from '../wren/WbWrenBloom.js';
 import WbWrenSmaa from '../wren/WbWrenSmaa.js';
 import {webots} from '../webots.js';
+import WbCoordinateSystem from '../wren/WbCoordinateSystem.js';
 
 export default class WbViewpoint extends WbBaseNode {
+  #coordinateSystem;
   #defaultOrientation;
   #defaultPosition;
   #fieldOfViewY;
@@ -77,6 +79,8 @@ export default class WbViewpoint extends WbBaseNode {
     this.#applyFieldOfViewToWren();
     this.updatePostProcessingEffects();
     this.#inverseViewMatrix = _wr_transform_get_matrix(this.#wrenCamera);
+
+    this.#coordinateSystem = new WbCoordinateSystem();
   }
 
   delete() {

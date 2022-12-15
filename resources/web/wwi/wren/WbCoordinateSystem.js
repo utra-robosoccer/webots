@@ -1,6 +1,6 @@
 import WbWrenRenderingContext from './WbWrenRenderingContext.js';
 import WbWrenShaders from './WbWrenShaders.js';
-import {arrayXPointerFloat} from './utils/utils.js';
+import {arrayXPointerFloat, arrayXPointerInt} from '../nodes/utils/utils.js';
 
 export default class WbCoordinateSystem {
   #axesMaterial;
@@ -17,7 +17,7 @@ export default class WbCoordinateSystem {
     const labelMeshCoordsPointer = arrayXPointerFloat(labelMeshCoords);
 
     const labelMeshIndices = [2, 1, 0, 3, 1, 2];
-    const labelMeshIndicesPointer = arrayXPointerFloat(labelMeshIndices);
+    const labelMeshIndicesPointer = arrayXPointerInt(labelMeshIndices);
 
     const labelTexCoords = [0, 0, 0, 1, 1, 0, 1, 1];
     const labelTexCoordsPointer = arrayXPointerFloat(labelTexCoords);
@@ -39,10 +39,10 @@ export default class WbCoordinateSystem {
 
     this.#transform = _wr_transform_new();
 
-    this.#font = _wr_font_new();
+    // this.#font = _wr_font_new();
     // TODO AIE
-    _wr_font_set_face(this.#font, 'arial');
-    _wr_font_set_size(this.#font, 64);
+    // _wr_font_set_face(this.#font, 'arial');
+    // _wr_font_set_size(this.#font, 64);
 
     const labelsColor = [[0, 0, 1, 1], [0, 1, 0, 1], [1, 0, 0, 1]];
     const labels = ['X', 'Y', 'Z'];
@@ -71,18 +71,21 @@ export default class WbCoordinateSystem {
     const axesColor = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
 
     // Create axes & their labels
+    this.#axesMaterial = [];
+    this.#axesMesh = [];
+    this.#renderables = [[], [], []];
     for (let i = 0; i < 3; ++i) {
       // Axis
       const axesCoordinatesIPointer = arrayXPointerFloat(axesCoordinates[i]);
       this.#axesMesh[i] = _wr_static_mesh_line_set_new(2, axesCoordinatesIPointer, undefined);
-      _free(arrayXPointerFloat);
+      _free(axesCoordinatesIPointer);
       this.#axesMaterial[i] = _wr_phong_material_new();
 
       const axesColorPointer = _wrjs_array3(axesColor[i][0], axesColor[i][1], axesColor[i][2]);
       _wr_phong_material_set_color(this.#axesMaterial[i], axesColorPointer);
       _wr_material_set_default_program(this.#axesMaterial[i], WbWrenShaders.coordinateSystemShader());
 
-      const renderable = _wr_renderable_new();
+      let renderable = _wr_renderable_new();
       this.#renderables[i][0] = renderable;
       _wr_renderable_set_cast_shadows(renderable, false);
       _wr_renderable_set_receive_shadows(renderable, false);
@@ -104,7 +107,7 @@ export default class WbCoordinateSystem {
       this.#labelsTexture[i] = _wr_drawable_texture_new();
 
       let width, height;
-      _wr_font_get_bounding_box(this.#font, labels[i], width, height);
+      // _wr_font_get_bounding_box(this.#font, labels[i], width, height);
 
       _wr_texture_set_size(this.#labelsTexture[i], width, height);
       _wr_texture_set_translucent(this.#labelsTexture[i], true);
@@ -148,7 +151,7 @@ export default class WbCoordinateSystem {
   deleteWrenObjects() {
     _wr_node_delete(this.#transform);
     _wr_static_mesh_delete(this.#labelsMesh);
-    _wr_font_delete(this.#font);
+    // _wr_font_delete(this.#font);
 
     for (let i = 0; i < 3; ++i) {
       _wr_node_delete(this.#renderables[i][0]);
