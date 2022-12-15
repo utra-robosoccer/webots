@@ -344,8 +344,12 @@ export default class WbViewpoint extends WbBaseNode {
   }
 
   updateOrientation() {
-    if (this.wrenObjectsCreatedCalled)
+    if (this.wrenObjectsCreatedCalled) {
       this.#applyOrientationToWren();
+
+      if (typeof this.#coordinateSystem !== 'undefined')
+        this.updateCoordinateSystem();
+    }
   }
 
   // Private functions

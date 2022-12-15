@@ -178,7 +178,6 @@ export default class WbCoordinateSystem {
     adaptedQuaternion = adaptedQuaternion.mul(quaternion);
     let rotation = new WbVector4();
     rotation.fromQuaternion(adaptedQuaternion);
-    console.log(rotation)
     _wr_transform_set_orientation(this.#transform, _wrjs_array4(rotation.w, rotation.x, rotation.y, rotation.z));
 
     rotation.fromQuaternion(adaptedQuaternion.conjugated());

@@ -75,7 +75,7 @@ export default class WbWrenShaders {
         Enum.WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
 
       const defaultPositionOnScreen = [0, 0];
-      const defaultPositionOnScreenPointer = arrayXPointerFloat(defaultPositionOnScreen)
+      const defaultPositionOnScreenPointer = arrayXPointerFloat(defaultPositionOnScreen);
       Module.ccall('wr_shader_program_create_custom_uniform', null, ['number', 'string', 'number', 'number'],
         [WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM], 'screenPosition',
           Enum.WR_SHADER_PROGRAM_UNIFORM_TYPE_VEC2F, defaultPositionOnScreenPointer]);
