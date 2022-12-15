@@ -1,4 +1,4 @@
-import {arrayXPointer} from '../nodes/utils/utils.js';
+import {arrayXPointer, arrayXPointerFloat} from '../nodes/utils/utils.js';
 
 export default class WbWrenShaders {
   static buildShader(shader, vertexShaderPath, fragmentShaderpath) {
@@ -60,6 +60,38 @@ export default class WbWrenShaders {
     }
 
     return WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_BRIGHT_PASS];
+  }
+
+  static coordinateSystemShader() {
+    if (!WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM]) {
+      WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM] = _wr_shader_program_new();
+
+      _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_MODEL_TRANSFORM);
+
+      _wr_shader_program_use_uniform_buffer(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_BUFFER_MATERIAL_PHONG);
+      _wr_shader_program_use_uniform_buffer(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
+
+      const defaultPositionOnScreen = [0, 0];
+      const defaultPositionOnScreenPointer = arrayXPointerFloat(defaultPositionOnScreen)
+      Module.ccall('wr_shader_program_create_custom_uniform', null, ['number', 'string', 'number', 'number'],
+        [WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM], 'screenPosition',
+          Enum.WR_SHADER_PROGRAM_UNIFORM_TYPE_VEC2F, defaultPositionOnScreenPointer]);
+
+      const defaultSize = 1;
+      Module.ccall('wr_shader_program_create_custom_uniform', null, ['number', 'string', 'number', 'number'],
+        [WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM], 'size',
+          Enum.WR_SHADER_PROGRAM_UNIFORM_TYPE_FLOAT, _wrjs_pointerOnFloat(defaultSize)]);
+
+      WbWrenShaders.buildShader(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM],
+        '../../../resources/wren/shaders/coordinate_system.vert', '../../../resources/wren/shaders/coordinate_system.frag');
+
+      _free(defaultPositionOnScreenPointer);
+    }
+
+    return WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_COORDINATE_SYSTEM];
   }
 
   static defaultShader() {
@@ -229,6 +261,8 @@ export default class WbWrenShaders {
 
       WbWrenShaders.buildShader(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_GTAO_TEMPORAL_DENOISE],
         '../../../resources/wren/shaders/pass_through.vert', '../../../resources/wren/shaders/gtao_temporal_denoise.frag');
+
+      _free(previousInverseViewMatrixPointer)
     }
 
     return WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_GTAO_TEMPORAL_DENOISE];
@@ -817,5 +851,6 @@ WbWrenShaders.SHADER = {
   SHADER_SMAA_EDGE_DETECT_PASS: 27,
   SHADER_SMAA_BLENDING_WEIGHT_CALCULATION_PASS: 28,
   SHADER_SMAA_FINAL_BLEND_PASS: 29,
-  SHADER_SIMPLE: 30
+  SHADER_SIMPLE: 30,
+  SHADER_COORDINATE_SYSTEM: 31
 };
