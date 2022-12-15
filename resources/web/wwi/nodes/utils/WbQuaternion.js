@@ -25,6 +25,10 @@ export default class WbQuaternion {
     }
   }
 
+  conjugated() {
+    return new WbQuaternion(-this.x, -this.y, -this.z, this.w);
+  }
+
   mul(q) {
     return new WbQuaternion(this.w * q.x + this.x * q.w + this.y * q.z - this.z * q.y,
       this.w * q.y + this.y * q.w + this.z * q.x - this.x * q.z, this.w * q.z + this.z * q.w + this.x * q.y - this.y * q.x,

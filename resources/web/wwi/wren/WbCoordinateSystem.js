@@ -1,6 +1,8 @@
 import WbWrenRenderingContext from './WbWrenRenderingContext.js';
 import WbWrenShaders from './WbWrenShaders.js';
+import WbQuaternion from '../nodes/utils/WbQuaternion.js';
 import {arrayXPointerFloat, arrayXPointerInt} from '../nodes/utils/utils.js';
+import WbVector4 from '../nodes/utils/WbVector4.js';
 
 export default class WbCoordinateSystem {
   #axesMaterial;
@@ -74,6 +76,7 @@ export default class WbCoordinateSystem {
     this.#axesMaterial = [];
     this.#axesMesh = [];
     this.#renderables = [[], [], []];
+    this.#labelsTransform = [];
     for (let i = 0; i < 3; ++i) {
       // Axis
       const axesCoordinatesIPointer = arrayXPointerFloat(axesCoordinates[i]);
@@ -101,6 +104,7 @@ export default class WbCoordinateSystem {
       _wr_transform_attach_child(this.#transform, renderable);
 
       // Label
+      /*
       renderable = _wr_renderable_new();
       this.#renderables[i][1] = renderable;
 
@@ -142,6 +146,7 @@ export default class WbCoordinateSystem {
 
       _wr_transform_attach_child(this.#labelsTransform[i], renderable);
       _wr_transform_attach_child(this.#transform, this.#labelsTransform[i]);
+      */
     }
 
     const root = _wr_scene_get_root(_wr_scene_get_instance());
@@ -166,5 +171,18 @@ export default class WbCoordinateSystem {
 
       _wr_texture_delete(this.#labelsTexture[i]);
     }
+  }
+
+  setOrientation(quaternion) {
+    let adaptedQuaternion = new WbQuaternion(-0.5, 0.5, 0.5, 0.5);
+    adaptedQuaternion = adaptedQuaternion.mul(quaternion);
+    let rotation = new WbVector4();
+    rotation.fromQuaternion(adaptedQuaternion);
+    console.log(rotation)
+    _wr_transform_set_orientation(this.#transform, _wrjs_array4(rotation.w, rotation.x, rotation.y, rotation.z));
+
+    rotation.fromQuaternion(adaptedQuaternion.conjugated());
+    // for (let i = 0; i < 3; ++i)
+      // _wr_transform_set_orientation(this.#labelsTransform[i], _wrjs_array4(rotation.x, rotation.y, rotation.z, rotation.w));
   }
 }

@@ -81,6 +81,7 @@ export default class WbViewpoint extends WbBaseNode {
     this.#inverseViewMatrix = _wr_transform_get_matrix(this.#wrenCamera);
 
     this.#coordinateSystem = new WbCoordinateSystem();
+    this.updateCoordinateSystem();
   }
 
   delete() {
@@ -154,6 +155,13 @@ export default class WbViewpoint extends WbBaseNode {
     this.#updateFieldOfViewY();
 
     this.#applyFieldOfViewToWren();
+  }
+
+  updateCoordinateSystem() {
+    if (!this.wrenObjectsCreatedCalled)
+      return;
+
+    this.#coordinateSystem.setOrientation(this.orientation.toQuaternion().conjugated());
   }
 
   updateExposure() {
