@@ -1,23 +1,12 @@
 #VRML_SIM R2023b utf8
 
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/objects/fruits/protos/Apple.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/objects/balls/protos/Ball.proto"
+EXTERNPROTO "TestProto2.proto"
 
 PROTO TestProto [
-  field SFNode sfnode Ball{}
-  field MFNode extension [Ball{}]
-  field MFNode extension2 [Ball{}]
+  field MFNode extension [TestProto2{}]
 ]
 {
   Group {
-    children [
-      Group {
-        children IS extension
-      }
-      Group {
-        children IS extension2
-      }
-    ]
-
+    children IS extension
   }
 }

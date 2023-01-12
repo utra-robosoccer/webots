@@ -149,9 +149,14 @@ export default class Parameter {
 
   // TODO: find better approach rather than propagating the view to subsequent parameters
   setValueFromJavaScript(view, v, index) {
+    console.log('setValueFromJavaScript', this.node)
+    console.log(Node.cNodeSiblings)
+
     // notify linked parameters of the change
-    for (const link of this.parameterLinks)
-      link.setValueFromJavaScript(view, (v !== null && v instanceof Node) ? v.clone() : v, index);
+    for (const link of this.parameterLinks) {
+      console.log('notify links')
+      link.setValueFromJavaScript(view, v, index);
+    }
 
     if (this.isTemplateRegenerator) {
       // regenerate this node, and all its siblings
@@ -161,11 +166,11 @@ export default class Parameter {
       if (typeof this.onChange === 'function')
         this.onChange();
     } else {
-      if (this.node.isProto) {
-        // update value on the structure side
-        this.#value.setValueFromJavaScript(v, index);
-        return; // webotsJS needs to be notified of parameter changes only if the parameter belongs to a base-node, not PROTO
-      }
+      //if (this.node.isProto) {
+      //  // update value on the structure side
+      //  this.#value.setValueFromJavaScript(v, index);
+      //  return; // webotsJS needs to be notified of parameter changes only if the parameter belongs to a base-node, not PROTO
+      //}
 
       if (this.#value instanceof SFNode) {
         const baseNode = this.node.getBaseNode();
@@ -207,13 +212,13 @@ export default class Parameter {
       } else {
         // update value on the structure side
         this.#value.setValueFromJavaScript(v);
+        this.node.applyPose(view, this.name);
 
-        // update value on the webotsJS side
-        const action = {};
-        action['id'] = this.node.id;
-        action[this.name] = this.value.toJson();
-        console.log('setPose', action);
-        view.x3dScene.applyPose(action);
+
+        //const action = {};
+        //action['id'] = this.node.getBaseNode().id;
+        //action[this.name] = this.value.toJson();
+
       }
       view.x3dScene.render();
     }

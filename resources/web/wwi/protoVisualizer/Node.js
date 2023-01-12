@@ -365,6 +365,24 @@ export default class Node {
     }
   }
 
+  applyPose(view, parameterName, propagate = true) {
+    const action = {};
+    action['id'] = this.getBaseNode().id;
+    const parameter = this.getParameterByName(parameterName)
+    action[parameterName] = parameter.value.toJson();
+
+    console.log('setPose', action);
+    view.x3dScene.applyPose(action);
+
+    if (!propagate)
+      return;
+
+    if (Node.cNodeSiblings.has(this.id)) {
+      for (const sibling of Node.cNodeSiblings.get(this.id))
+        sibling.applyPose(view, parameterName, false); // prevent endless loop
+    }
+  }
+
   clearReferences() {
     this.def = new Map();
 
