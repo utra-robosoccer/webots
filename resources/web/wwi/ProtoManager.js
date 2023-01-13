@@ -60,6 +60,9 @@ export default class ProtoManager {
     let xml = this.getXmlOfMinimalScene();
     const scene = xml.getElementsByTagName('Scene')[0];
     scene.appendChild(this.proto.toX3d());
+    this.proto.printBaseNodes()
+    this.proto.printExposedParameters()
+    //console.log(this.proto.findSubNode('n-6'))
     console.log( new XMLSerializer().serializeToString(this.proto.toX3d()))
     console.log(this.proto)
     const x3d = new XMLSerializer().serializeToString(xml);

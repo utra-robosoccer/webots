@@ -253,6 +253,9 @@ export default class Node {
               throw new Error('Alias "' + alias + '" not found in PROTO ' + this.name);
 
             const exposedParameter = tokenizer.proto.parameters.get(alias);
+            console.log('FOUND', exposedParameter, parameter)
+            //if(alias === 'extension')
+            //  throw new Error('ASD')
             parameter.value = exposedParameter.value.clone();
             exposedParameter.insertLink(parameter);
           } else
@@ -405,6 +408,125 @@ export default class Node {
       return this.baseType.getBaseNode();
 
     return this;
+  }
+
+  printBaseNodes(depth = 0, nonDefaultOnly = true) {
+    if (depth === 0)
+      console.log('-- PRINT BASE NODES ---------------------------------------------')
+    const indent = '  '.repeat(depth)
+
+    let siblings = '';
+    if (Node.cNodeSiblings.has(this.id)) {
+      for (const sibling of Node.cNodeSiblings.get(this.id))
+        siblings += sibling.id + ', ';
+    }
+    if (siblings.length > 0)
+      siblings = siblings.substring(0, siblings.length - 2);
+
+    console.log(indent + this.name + ' (' + this.id + ') - siblings [' + siblings + ']');
+
+    if (this.isProto)
+      this.baseType.printBaseNodes(depth + 1, nonDefaultOnly);
+    else {
+      for (const [parameterName, parameter] of this.parameters) {
+        if (nonDefaultOnly && parameter.isDefault())
+          continue;
+        console.log(indent + '-- ' + parameterName);
+        if (parameter.type === VRML.SFNode) {
+          if (parameter.value.value !== null)
+            parameter.value.value.printBaseNodes(depth + 1, nonDefaultOnly);
+        } else if (parameter.type === VRML.MFNode) {
+          for (const n of parameter.value.value)
+            if (n.value !== null)
+              n.value.printBaseNodes(depth + 1, nonDefaultOnly);
+        }
+      }
+    }
+
+    if (depth === 0)
+      console.log('-----------------------------------------------------------------')
+  }
+
+  printExposedParameters(depth = 0) {
+    if (depth === 0)
+      console.log('-- PRINT EXPOSED PARAMETERS -------------------------------------')
+    const indent = '  '.repeat(depth)
+
+    let siblings = '';
+    if (Node.cNodeSiblings.has(this.id)) {
+      for (const sibling of Node.cNodeSiblings.get(this.id))
+        siblings += sibling.id + ', ';
+    }
+    if (siblings.length > 0)
+      siblings = siblings.substring(0, siblings.length - 2);
+
+    console.log(indent + this.name + ' (' + this.id + ') - siblings [' + siblings + ']');
+
+    if (!this.isProto)
+      return;
+
+    for (const [parameterName, parameter] of this.parameters) {
+      let links = ''
+      for (const link of parameter.parameterLinks)
+        links += link.name + ' (of ' + link.node.id + ') , ';
+      if (links.length > 0)
+        links = links.substring(0, links.length - 3);
+
+      console.log(indent + '-- ' + parameterName + ' linked to [' + links + ']')
+      if (parameter.type === VRML.SFNode) {
+        if (parameter.value.value !== null)
+          parameter.value.value.printExposedParameters(depth + 1);
+      } else if (parameter.type === VRML.MFNode) {
+        for (const n of parameter.value.value)
+          if (n.value !== null)
+            n.value.printExposedParameters(depth + 1);
+      }
+    }
+    if (depth === 0)
+      console.log('-----------------------------------------------------------------')
+  }
+
+  findSubNode(id) {
+    console.log(this.name, 'compare ', this.id, id)
+    if (this.id === id)
+      return this;
+
+    for (const [parameterName, parameter] of this.parameters) {
+      if (parameter.type === VRML.SFNode) {
+        if (parameter.value.value !== null) {
+          console.log(this.name, 'compare ', parameter.value.value.id, id)
+          if (parameter.value.value.id === id)
+            return parameter.value.value;
+          else {
+            const found = parameter.value.value.findSubNode(id);
+            if (typeof found !== 'undefined')
+              return found;
+          }
+        }
+      } else if (parameter.type === VRML.MFNode) {
+        for (const n of parameter.value.value) {
+          if (n.value !== null) {
+            console.log(this.name, 'compare ', n.value.id, id)
+            if (n.value.id === id)
+              return n.value;
+            else {
+              const found = n.value.findSubNode(id);
+              if (typeof found !== 'undefined')
+                return found;
+            }
+          }
+        }
+      }
+    }
+
+
+    if (this.isProto) {
+      const found = this.baseType.findSubNode(id);
+      if (typeof found !== 'undefined')
+        return found;
+    }
+
+    return undefined;
   }
 
   static createNode(tokenizer) {

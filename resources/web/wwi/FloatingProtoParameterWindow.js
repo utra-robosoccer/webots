@@ -709,7 +709,7 @@ export default class FloatingProtoParameterWindow extends FloatingWindow {
       if (typeof index === 'undefined')
         throw new Error('The PROTO node to be configured is not defined, this should never be the case.');
 
-      console.log('CONFIG', parameter.value.value[index].value.id)
+      console.log('CONFIG', parameter.value.value[index].value)
       this.proto = parameter.value.value[index].value;
       this.populateProtoParameterWindow();
     };
