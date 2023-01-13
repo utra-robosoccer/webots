@@ -212,13 +212,14 @@ export default class Parameter {
       } else {
         // update value on the structure side
         this.#value.setValueFromJavaScript(v);
-        this.node.applyPose(view, this.name);
+        //this.node.applyPose(view, this.name);
 
 
-        //const action = {};
-        //action['id'] = this.node.getBaseNode().id;
-        //action[this.name] = this.value.toJson();
-
+        const action = {};
+        action['id'] = this.node.getBaseNode().id;
+        action[this.name] = this.value.toJson();
+        console.log('setPose', action);
+        view.x3dScene.applyPose(action);
       }
       view.x3dScene.render();
     }
@@ -240,7 +241,6 @@ export default class Parameter {
       deep ? this.defaultValue.clone(deep) : this.defaultValue,
       deep ? this.value.clone(deep) : this.value, this.isTemplateRegenerator);
 
-    copy.#parameterLinks = [];
     for (const item of this.parameterLinks)
       copy.insertLink(item.clone(deep));
 

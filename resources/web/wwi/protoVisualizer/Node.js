@@ -128,7 +128,7 @@ export default class Node {
       copy.baseType = this.baseType.clone(deep);
 
     copy.id = getAnId();
-
+    console.log('CLONING ', copy.id, 'FROM', this.id)
     if (!deep) {
       if (!Node.cNodeSiblings.has(this.id))
         Node.cNodeSiblings.set(this.id, []);
@@ -146,6 +146,7 @@ export default class Node {
       if (typeof parameter !== 'undefined') {
         // console.log('cloning parameter ' + parameterName + ' (type ' + parameter.type + ')');
         const parameterCopy = parameter.clone(deep);
+        console.log('CLONE PARAMETER', parameterName)
         parameterCopy.node = copy;
         // console.log('NODE ORIGINAL', parameter);
         // console.log('NODE COPY', parameterCopy);
@@ -229,7 +230,7 @@ export default class Node {
     // skip bracket opening the PROTO body
     tokenizer.skipToken('{');
 
-    this.baseType = Node.createNode(tokenizer);
+    this.baseType = Node.createNode(tokenizer, true);
 
     tokenizer.skipToken('}');
   };
@@ -254,8 +255,6 @@ export default class Node {
 
             const exposedParameter = tokenizer.proto.parameters.get(alias);
             console.log('FOUND', exposedParameter, parameter)
-            //if(alias === 'extension')
-            //  throw new Error('ASD')
             parameter.value = exposedParameter.value.clone();
             exposedParameter.insertLink(parameter);
           } else
@@ -529,7 +528,7 @@ export default class Node {
     return undefined;
   }
 
-  static createNode(tokenizer) {
+  static createNode(tokenizer, isCreatingBaseType) {
     let defName;
     if (tokenizer.peekWord() === 'DEF') {
       tokenizer.skipToken('DEF');
@@ -578,7 +577,7 @@ export default class Node {
     if (typeof defName !== 'undefined')
       tokenizer.proto.def.set(defName, node);
 
-    node.configureNodeFromTokenizer(tokenizer);
+    node.configureNodeFromTokenizer(tokenizer, isCreatingBaseType);
     if (node.isProto)
       node.parseBody();
 
