@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ include $(WEBOTS_HOME_PATH)/resources/Makefile.os.include
 
 .PHONY: release debug profile clean
 
-TARGETS = controllers/braitenberg.Makefile libraries/vehicle.Makefile resources.Makefile
+TARGETS = controllers/braitenberg.Makefile libraries/vehicle.Makefile
 
 ifeq ($(OSTYPE),linux)
 TARGETS += controllers/ros.Makefile
@@ -35,8 +35,3 @@ clean: $(TARGETS)
 controllers/%.Makefile libraries/%.Makefile:
 	+@echo "# make" $(MAKECMDGOALS) $(@:.Makefile=)
 	+@make -s -C $(@:.Makefile=) $(MAKECMDGOALS)
-
-
-resources.Makefile:
-	@echo "#"; echo "# *** resources ***"
-	+@make -s -C resources $(MAKECMDGOALS)

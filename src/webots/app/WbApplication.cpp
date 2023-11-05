@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -269,6 +269,9 @@ void WbApplication::loadWorld(QString worldName, bool reloading, bool isLoadingA
   }
 
   emit preWorldLoaded(reloading);
+  // create a file in tmp path for ipc extern controllers
+  QFile loading_file(WbStandardPaths::webotsTmpPath() + "loading");
+  loading_file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
 
   bool isFirstLoad = (mWorld == NULL);
   delete mWorld;
@@ -295,6 +298,7 @@ void WbApplication::loadWorld(QString worldName, bool reloading, bool isLoadingA
   WbNodeOperations::instance()->updateDictionary(true, mWorld->root());
 
   emit postWorldLoaded(reloading, isFirstLoad);
+  loading_file.remove();
 
   emit deleteWorldLoadingProgressDialog();
 

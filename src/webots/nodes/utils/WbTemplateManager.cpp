@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -101,25 +101,27 @@ void WbTemplateManager::subscribe(WbNode *node, bool subscribedDescendant) {
   if (node->isTemplate() && !mTemplates.contains(node)) {
     subscribed = true;
     mTemplates << node;
-    connect(node, &QObject::destroyed, this, &WbTemplateManager::unsubscribe, Qt::UniqueConnection);
     connect(node, &WbNode::regenerateNodeRequest, this, &WbTemplateManager::regenerateNode, Qt::UniqueConnection);
     connect(node, &WbNode::regenerationRequired, this, &WbTemplateManager::nodeNeedRegeneration);
   }
-
+  if (subscribedDescendant)
+    mNodesSubscribedForRegeneration.insert(node);
   recursiveFieldSubscribeToRegenerateNode(node, subscribed, subscribedDescendant);
+  connect(node, &QObject::destroyed, this, &WbTemplateManager::unsubscribe, Qt::UniqueConnection);
 }
 
 void WbTemplateManager::unsubscribe(QObject *node) {
-  disconnect(static_cast<WbNode *>(node), &WbNode::regenerationRequired, this, &WbTemplateManager::nodeNeedRegeneration);
-  mTemplates.removeAll(static_cast<WbNode *>(node));
+  const WbNode *n = static_cast<WbNode *>(node);
+  if (n->isTemplate() && mTemplates.removeAll(n) > 0)
+    disconnect(n, &WbNode::regenerationRequired, this, &WbTemplateManager::nodeNeedRegeneration);
+  mNodesSubscribedForRegeneration.remove(n);
 }
 
 bool WbTemplateManager::nodeNeedsToSubscribe(WbNode *node) {
   if (!node->isProtoInstance())
     return false;
 
-  QVector<WbField *> fields = node->fieldsOrParameters();
-  foreach (WbField *field, fields) {
+  foreach (WbField *field, node->fieldsOrParameters()) {
     if (!field->alias().isEmpty())
       return true;
   }
@@ -273,8 +275,7 @@ void WbTemplateManager::regenerateNode(WbNode *node, bool restarted) {
 
   WbNode::setGlobalParentNode(parent);
 
-  WbNode *newNode = WbNode::regenerateProtoInstanceFromParameters(proto, parameters, node->isTopLevel(),
-                                                                  WbWorld::instance()->fileName(), true, uniqueId);
+  WbNode *newNode = WbNode::createProtoInstanceFromParameters(proto, parameters, WbWorld::instance()->fileName(), uniqueId);
 
   if (!newNode) {
     WbLog::error(tr("Template regeneration failed. The node cannot be generated."), false, WbLog::PARSING);
@@ -292,14 +293,17 @@ void WbTemplateManager::regenerateNode(WbNode *node, bool restarted) {
 
   WbNodeUtilities::validateInsertedNode(parentField, newNode, parent, isInBoundingObject);
 
-  subscribe(newNode);
+  subscribe(newNode, mNodesSubscribedForRegeneration.contains(node));
 
-  bool ancestorTemplateRegeneration = upperTemplateNode != NULL;
+  const bool ancestorTemplateRegeneration = upperTemplateNode != NULL;
   if (node->isProtoParameterNode()) {
-    const QVector<WbField *> &parentFields = parent->fieldsOrParameters();
-    foreach (WbField *const parentField, parentFields) {
-      if (parentField->type() == WB_SF_NODE) {
-        WbSFNode *sfnode = static_cast<WbSFNode *>(parentField->value());
+    // internal PROTO child could be regenerated due to a parameter exposed in the parent PROTO node
+    // so for parent PROTO instances both fields and parameters needs to be checked
+    const QList<WbField *> parentFields = (parent->isProtoInstance() ? parent->parameters() : QList<WbField *>())
+                                          << parent->fields();
+    foreach (WbField *const pf, parentFields) {
+      if (pf->type() == WB_SF_NODE) {
+        WbSFNode *sfnode = static_cast<WbSFNode *>(pf->value());
         if (sfnode->value() == node) {
           if (ancestorTemplateRegeneration)
             sfnode->blockSignals(true);
@@ -311,9 +315,11 @@ void WbTemplateManager::regenerateNode(WbNode *node, bool restarted) {
             regenerateNode(upperTemplateNode);
             return;
           }
+          break;
         }
-      } else if (parentField->type() == WB_MF_NODE) {
-        WbMFNode *mfnode = static_cast<WbMFNode *>(parentField->value());
+      } else if (pf->type() == WB_MF_NODE) {
+        WbMFNode *mfnode = static_cast<WbMFNode *>(pf->value());
+        bool found = false;
         for (int i = 0; i < mfnode->size(); ++i) {
           WbNode *n = mfnode->item(i);
           if (n == node) {
@@ -328,8 +334,14 @@ void WbTemplateManager::regenerateNode(WbNode *node, bool restarted) {
               regenerateNode(upperTemplateNode);
               return;
             }
+            found = true;
             break;
           }
+        }
+        if (found) {
+          if (parent->isProtoInstance())
+            parent->redirectInternalFields(parentField);
+          break;
         }
       }
     }
@@ -353,21 +365,11 @@ void WbTemplateManager::regenerateNode(WbNode *node, bool restarted) {
     else if (parentGroup) {
       int i = parentGroup->nodeIndex(node);
       assert(i != -1);
-
-      // TODO: The 3 following lines could be simplified by using WbGroup::setChild(),
-      //       but this function has to be fixed first (similar problem in WbSceneTree::transform
-      // remove currentNode
-      parentGroup->removeChild(node);
-      // insert just after currentNode
-      parentGroup->insertChild(i, newNode);
-      delete node;  // In the other cases the setter function will take care of deleting the node
+      parentGroup->setChild(i, newNode);
     } else if (parentSkin && parentSkin->appearanceField() && newAppearance) {
       int i = parentSkin->appearanceField()->nodeIndex(node);
       assert(i != -1);
-
-      // TODO: WbMFNode::setItem doesn't work here either. Fix this along with WbGroup::setChild()
-      parentSkin->appearanceField()->removeItem(i);
-      parentSkin->appearanceField()->insertItem(i, newAppearance);
+      parentSkin->appearanceField()->setItem(i, newAppearance);
     } else if (parentShape && newGeometry)
       parentShape->setGeometry(newGeometry);
     else if (parentShape && newAppearance)

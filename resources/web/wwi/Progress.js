@@ -20,7 +20,7 @@ export default class Progress {
     // Progress image
     this.#progressImage = document.createElement('img');
     this.#progressImage.id = 'progress-image';
-    this.#progressImage.src = (image || image !== 'undefined') ? image : this.#setDefaultImage;
+    this.#progressImage.src = (image && image !== 'undefined') ? image : this.#setDefaultImage;
     this.#progress.appendChild(this.#progressImage);
     this.#progressImage.addEventListener('error', this.#setDefaultImage.bind(this));
 
@@ -48,7 +48,7 @@ export default class Progress {
 
     this.#progressPanelCopyright = document.createElement('div');
     this.#progressPanelCopyright.className = 'progress-panel-copyright';
-    this.#progressPanelCopyright.innerHTML = 'Copyright &copy 1998 - 2022 Cyberbotcs Ltd.';
+    this.#progressPanelCopyright.innerHTML = 'Copyright &copy 1998 - 2023 Cyberbotcs Ltd.';
     this.#progressPanel.appendChild(this.#progressPanelCopyright);
 
     // Progress Bar

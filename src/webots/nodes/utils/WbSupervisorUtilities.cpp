@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -76,8 +76,8 @@ struct WbTrackedFieldInfo {
 };
 
 struct WbTrackedPoseInfo {
-  WbTransform *fromNode;
-  WbTransform *toNode;
+  WbPose *fromNode;
+  WbPose *toNode;
   int samplingPeriod;
   double lastUpdate;
 };
@@ -274,8 +274,8 @@ WbSupervisorUtilities::WbSupervisorUtilities(WbRobot *robot) : mRobot(robot) {
   connect(WbTemplateManager::instance(), &WbTemplateManager::postNodeRegeneration, this,
           &WbSupervisorUtilities::updateProtoRegeneratedFlag);
 
-  // Do not apply the change simulation mode during dealing with a controller message
-  // otherwise, conflicts can occur in case of multiple controllers
+  //  Do not apply the change simulation mode during dealing with a controller message
+  //  otherwise, conflicts can occur in case of multiple controllers
   connect(this, &WbSupervisorUtilities::changeSimulationModeRequested, this, &WbSupervisorUtilities::changeSimulationMode,
           Qt::QueuedConnection);
 }
@@ -681,26 +681,40 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
         filename = WbStandardPaths::fontsPath() + "Arial.ttf";
       }
 
-      if (id < MAX_LABELS) {
-        int labelId = (int)id + mRobot->uniqueId() * MAX_LABELS;  // kind of hack to avoid an id clash.
+      int labelId;
+      if (id < MAX_LABELS)
+        labelId = (int)id + mRobot->uniqueId() * MAX_LABELS;  // kind of hack to avoid an id clash.
+      else {
+        mRobot->warn(tr("wb_supervisor_set_label() is out of range. The supported range is [0, %1].").arg(MAX_LABELS - 1));
+        return;
+      }
 
-        mLabelIds.removeAll(labelId);
-        mLabelIds << labelId;
-
-        WbWrenLabelOverlay *label = WbWrenLabelOverlay::createOrRetrieve(labelId, filename);
-        QString error = label->getFontError();
-        if (error != "") {
-          mRobot->warn(tr(error.toStdString().c_str()));
+      WbWrenLabelOverlay *existingLabel = WbWrenLabelOverlay::retrieveById(labelId);
+      if (existingLabel && x == existingLabel->x() && y == existingLabel->y() && size == existingLabel->size() &&
+          filename == existingLabel->font() && text == existingLabel->text()) {
+        const float *oldColors = existingLabel->color();
+        float colorArray[4];
+        WbWrenLabelOverlay::colorToArray(colorArray, color);
+        if (colorArray[0] == oldColors[0] && colorArray[1] == oldColors[1] && colorArray[2] == oldColors[2] &&
+            colorArray[3] == oldColors[3])
           return;
-        }
-        label->setText(text);
-        label->setPosition(x, y);
-        label->setSize(size);
-        label->setColor(color);
-        label->applyChangesToWren();
-        emit labelChanged(createLabelUpdateString(label));
-      } else
-        mRobot->warn(tr("wb_supervisor_set_label() is out of range. The supported range is [0, %1].").arg(MAX_LABELS));
+      }
+
+      mLabelIds.removeAll(labelId);
+      mLabelIds << labelId;
+
+      WbWrenLabelOverlay *label = WbWrenLabelOverlay::createOrRetrieve(labelId, filename);
+      const QString error = label->getFontError();
+      if (error != "") {
+        mRobot->warn(tr(error.toStdString().c_str()));
+        return;
+      }
+      label->setText(text);
+      label->setPosition(x, y);
+      label->setSize(size);
+      label->setColor(color);
+      label->applyChangesToWren();
+      emit labelChanged(createLabelUpdateString(label));
 
       return;
     }
@@ -846,10 +860,10 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
       stream >> id;
 
       WbNode *const node = getProtoParameterNodeInstance(id, "wb_supervisor_node_get_position()");
-      WbTransform *const transform = dynamic_cast<WbTransform *>(node);
-      mNodeGetPosition = transform;
-      if (!transform)
-        mRobot->warn(tr("wb_supervisor_node_get_position() can exclusively be used with Transform (or derived)."));
+      WbPose *const pose = dynamic_cast<WbPose *>(node);
+      mNodeGetPosition = pose;
+      if (!pose)
+        mRobot->warn(tr("wb_supervisor_node_get_position() can exclusively be used with Pose (or derived)."));
       return;
     }
     case C_SUPERVISOR_NODE_GET_ORIENTATION: {
@@ -858,10 +872,10 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
       stream >> id;
 
       WbNode *const node = getProtoParameterNodeInstance(id, "wb_supervisor_node_get_orientation()");
-      WbTransform *const transform = dynamic_cast<WbTransform *>(node);
-      mNodeGetOrientation = transform;
-      if (!transform)
-        mRobot->warn(tr("wb_supervisor_node_get_orientation() can exclusively be used with Transform (or derived)."));
+      WbPose *const pose = dynamic_cast<WbPose *>(node);
+      mNodeGetOrientation = pose;
+      if (!pose)
+        mRobot->warn(tr("wb_supervisor_node_get_orientation() can exclusively be used with Pose (or derived)."));
       return;
     }
     case C_SUPERVISOR_NODE_GET_POSE: {
@@ -873,16 +887,16 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
 
       if (idFrom) {
         WbNode *const fromNode = getProtoParameterNodeInstance(idFrom, "wb_supervisor_node_get_pose()");
-        WbTransform *const transformFrom = dynamic_cast<WbTransform *>(fromNode);
-        mNodeGetPose.first = transformFrom;
+        WbPose *const poseFrom = dynamic_cast<WbPose *>(fromNode);
+        mNodeGetPose.first = poseFrom;
       } else
         mNodeGetPose.first = NULL;
       WbNode *const toNode = getProtoParameterNodeInstance(idTo, "wb_supervisor_node_get_pose()");
-      WbTransform *const transformTo = dynamic_cast<WbTransform *>(toNode);
-      mNodeGetPose.second = transformTo;
+      WbPose *const poseTo = dynamic_cast<WbPose *>(toNode);
+      mNodeGetPose.second = poseTo;
 
-      if (!transformTo)
-        mRobot->warn(tr("wb_supervisor_node_get_pose() can exclusively be used with Transform (or derived)."));
+      if (!poseTo)
+        mRobot->warn(tr("wb_supervisor_node_get_pose() can exclusively be used with Pose (or derived)."));
       return;
     }
     case C_SUPERVISOR_NODE_GET_CENTER_OF_MASS: {
@@ -899,16 +913,18 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
     }
     case C_SUPERVISOR_NODE_GET_CONTACT_POINTS: {
       unsigned int id;
-      unsigned char includeDescendants;
+      unsigned char includeDescendantsChar;
 
       stream >> id;
-      stream >> includeDescendants;
+      stream >> includeDescendantsChar;
+
+      const bool includeDescendants = includeDescendantsChar == 1;
 
       WbNode *const node = getProtoParameterNodeInstance(id, "wb_supervisor_node_get_number_of_contact_points()");
       WbSolid *const solid = dynamic_cast<WbSolid *>(node);
       mNodeGetContactPoints = solid;
       mNodeIdGetContactPoints = id;
-      mGetContactPointsIncludeDescendants = includeDescendants == 1;
+      mGetContactPointsIncludeDescendants = includeDescendants;
       if (!solid)
         mRobot->warn(
           tr("wb_supervisor_node_get_number_of_contact_points() and wb_supervisor_node_get_contact_point() can exclusively "
@@ -1240,12 +1256,13 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
     }
     case C_SUPERVISOR_CONTACT_POINTS_CHANGE_TRACKING_STATE: {
       unsigned int nodeId;
-      unsigned char includeDescendants;
+      unsigned char includeDescendantsChar;
       unsigned char enable;
       unsigned int samplingPeriod;
 
       stream >> nodeId;
-      stream >> includeDescendants;
+      stream >> includeDescendantsChar;
+      const bool includeDescendants = includeDescendantsChar == 1;
       stream >> enable;
       if (enable)
         stream >> samplingPeriod;
@@ -1266,7 +1283,7 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
 
       int trackingInfoIndex = -1;
       for (int i = 0; i < mTrackedContactPoints.size(); i++) {
-        if (mTrackedContactPoints[i].solid == solid && mTrackedContactPoints[i].includeDescendants == includeDescendants) {
+        if (mTrackedContactPoints[i].solid == solid) {
           trackingInfoIndex = i;
           break;
         }
@@ -1278,9 +1295,12 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
           trackedContactPoint.solid = solid;
           trackedContactPoint.solidId = nodeId;
           trackedContactPoint.includeDescendants = includeDescendants;
+          trackedContactPoint.samplingPeriod = 0;
+          trackedContactPoint.lastUpdate = 0;
           mTrackedContactPoints.append(trackedContactPoint);
           connect(solid, &WbSolid::destroyed, this, &WbSupervisorUtilities::removeTrackedContactPoints);
         } else {
+          mTrackedContactPoints[trackingInfoIndex].includeDescendants = includeDescendants;
           mTrackedContactPoints[trackingInfoIndex].samplingPeriod = samplingPeriod;
           mTrackedContactPoints[trackingInfoIndex].lastUpdate = -INFINITY;
         }
@@ -1308,8 +1328,8 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
           tr("'wb_supervisor_node_%1_pose_tracking' called for an invalid node.").arg(enable ? "enable" : "disable"));
         return;
       }
-      WbTransform *const toTransformNode = dynamic_cast<WbTransform *>(toNode);
-      if (!toTransformNode) {
+      WbPose *const toPoseNode = dynamic_cast<WbPose *>(toNode);
+      if (!toPoseNode) {
         mRobot->warn(tr("Node '%1' (%2) is not suitable for pose tracking, aborting request.")
                        .arg(toNode->usefulName())
                        .arg(toNode->modelName()));
@@ -1319,31 +1339,30 @@ void WbSupervisorUtilities::handleMessage(QDataStream &stream) {
       WbNode *const fromNode = WbNode::findNode(fromNodeId);
       int index = -1;
       for (int i = 0; i < mTrackedPoses.size(); i++) {
-        if (mTrackedPoses[i].fromNode == fromNode && mTrackedPoses[i].toNode == toTransformNode) {
+        if (mTrackedPoses[i].fromNode == fromNode && mTrackedPoses[i].toNode == toPoseNode) {
           index = i;
           break;
         }
       }
 
       if (enable) {
-        WbTransform *const fromTransformNode = fromNode ? dynamic_cast<WbTransform *>(fromNode) : NULL;
-        if (fromNodeId && !fromTransformNode)
-          mRobot->warn(
-            tr("Pose tracking can be exclusively used with Transform (or derived) 'from_node' argument, but '%1' (%2) is "
-               "given. The absolute pose in global coordinates will be returned.")
-              .arg(fromNode->usefulName())
-              .arg(fromNode->modelName()));
+        WbPose *const fromPoseNode = fromNode ? dynamic_cast<WbPose *>(fromNode) : NULL;
+        if (fromNodeId && !fromPoseNode)
+          mRobot->warn(tr("Pose tracking can be exclusively used with Pose (or derived) 'from_node' argument, but '%1' (%2) is "
+                          "given. The absolute pose in global coordinates will be returned.")
+                         .arg(fromNode->usefulName())
+                         .arg(fromNode->modelName()));
 
         if (index < 0) {
           WbTrackedPoseInfo trackedPose;
-          trackedPose.fromNode = fromTransformNode;
-          trackedPose.toNode = toTransformNode;
+          trackedPose.fromNode = fromPoseNode;
+          trackedPose.toNode = toPoseNode;
           trackedPose.samplingPeriod = samplingPeriod;
           trackedPose.lastUpdate = -INFINITY;
           mTrackedPoses.append(trackedPose);
-          if (fromTransformNode)
-            connect(fromTransformNode, &WbNode::destroyed, this, &WbSupervisorUtilities::removeTrackedPoseNode);
-          connect(toTransformNode, &WbNode::destroyed, this, &WbSupervisorUtilities::removeTrackedPoseNode);
+          if (fromPoseNode)
+            connect(fromPoseNode, &WbNode::destroyed, this, &WbSupervisorUtilities::removeTrackedPoseNode);
+          connect(toPoseNode, &WbNode::destroyed, this, &WbSupervisorUtilities::removeTrackedPoseNode);
         } else {
           mTrackedPoses[index].samplingPeriod = samplingPeriod;
           mTrackedPoses[index].lastUpdate = -INFINITY;
@@ -1818,7 +1837,7 @@ void WbSupervisorUtilities::pushSingleFieldContentToStream(WbDataStream &stream,
   }
 }
 
-void WbSupervisorUtilities::pushRelativePoseToStream(WbDataStream &stream, WbTransform *fromNode, WbTransform *toNode) {
+void WbSupervisorUtilities::pushRelativePoseToStream(WbDataStream &stream, WbPose *fromNode, WbPose *toNode) {
   WbMatrix4 m;
 
   WbMatrix4 mTo(toNode->matrix());
@@ -1855,7 +1874,7 @@ void WbSupervisorUtilities::pushContactPointsToStream(WbDataStream &stream, WbSo
   stream << (short unsigned int)0;
   stream << (unsigned char)C_SUPERVISOR_NODE_GET_CONTACT_POINTS;
   stream << (int)solidId;
-  stream << (unsigned char)includeDescendants;
+  stream << (unsigned char)(includeDescendants ? 1 : 0);
   stream << (int)size;
   for (int i = 0; i < size; ++i) {
     const WbVector3 &v = contactPoints.at(i);
@@ -2246,10 +2265,12 @@ QStringList WbSupervisorUtilities::labelsState() const {
 
 QString WbSupervisorUtilities::createLabelUpdateString(const WbWrenLabelOverlay *labelOverlay) const {
   assert(labelOverlay);
-  float x, y, alpha;
+  double x, y;
+  float alpha;
   int r, g, b;
   labelOverlay->position(x, y);
   labelOverlay->color(r, g, b, alpha);
+  QString text = labelOverlay->text();
   return QString("\"id\":%1,\"font\":\"%2\",\"rgba\":\"%3,%4,%5,%6\",\"size\":%7,\"x\":%8,\"y\":%9,\"text\":\"%10\"")
     .arg(labelOverlay->id())
     .arg(labelOverlay->font())
@@ -2260,5 +2281,5 @@ QString WbSupervisorUtilities::createLabelUpdateString(const WbWrenLabelOverlay 
     .arg(labelOverlay->size())
     .arg(x)
     .arg(y)
-    .arg(labelOverlay->text());
+    .arg(text.replace("\n", "\\n"));
 }

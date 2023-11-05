@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -137,15 +137,15 @@ void WbInertialUnit::computeValue() {
   }
 
   if (!mXAxis->isTrue() || !mYAxis->isTrue() || !mZAxis->isTrue()) {
-    WbAxisAngle aa = e.toAxisAngle();
+    WbRotation rotation(e);
     if (!mXAxis->isTrue())
-      aa.axis().setX(0);
+      rotation.setX(0);
     if (!mYAxis->isTrue())
-      aa.axis().setZ(0);
+      rotation.setZ(0);
     if (!mZAxis->isTrue())
-      aa.axis().setY(0);
-    aa.axis().normalize();
-    e = WbMatrix3(aa.axis(), aa.angle());
+      rotation.setY(0);
+    rotation.normalizeAxis();
+    e = rotation.toMatrix3();
   }
 
   mQuaternion = e.toQuaternion();

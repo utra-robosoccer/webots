@@ -6,7 +6,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,11 +56,6 @@ def check_rpath(home_path):
     ]
 
     success = True
-
-    darwinOpDylib = os.path.join(home_path, 'projects/robots/robotis/darwin-op/plugins/',
-                                 'robot_windows/robotis-op2_window/librobotis-op2_window.dylib')
-    subprocess.run(['install_name_tool', '-rpath', '@loader_path/../../../../../../../',
-                    '@loader_path/../../../../../../../../', darwinOpDylib])
 
     # Check dependencies are:
     # - absolute (system) and are not containing local (macports)

@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,7 +39,6 @@ public:
   dSpaceID reservedSpace();
   void removeExtraSpace();
   const WbVector3 &centerOfMass() const { return mCenterOfMass; }
-  const WbVector3 &scaledCenterOfMass() const { return mScaledCenterOfMass; }
   const WbVector3 &absoluteCenterOfMass() const { return mAbsoluteCenterOfMass; }
   const QMap<WbSolid *, dMass *> &mergedSolids() const;
   void appendSolid(WbSolid *solid);
@@ -64,7 +63,6 @@ private:
   WbSolid *mSolid;
   dSpaceID mSpace;
   WbVector3 mCenterOfMass;
-  WbVector3 mScaledCenterOfMass;
   WbVector3 mAbsoluteCenterOfMass;
   void updateCenterOfMass();
   dMass *mOdeMass;

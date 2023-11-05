@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -109,7 +109,8 @@ private:
   bool refreshRecognitionSensorIfNeeded();
   void removeOccludedRecognizedObjects();
   WbVector2 projectOnImage(const WbVector3 &position);
-  void computeRecognizedObjects(bool finalSetup, bool needCollisionDetection);
+  WbVector2 applyCameraDistortionToImageCoordinate(const WbVector2 &uv);  // uv coordinates expected in range [0, 1]
+  void computeRecognizedObjects();
   bool setRecognizedObjectProperties(WbRecognizedObject *recognizedObject);
   void updateRaysSetupIfNeeded() override;
   short mRecognitionRefreshRate;
@@ -119,6 +120,7 @@ private:
   QList<WbRecognizedObject *> mRecognizedObjects;
   QList<WbRecognizedObject *> mInvalidRecognizedObjects;
   WrTexture *mRecognizedObjectsTexture;
+  bool mIsSubscribedToRayTracing;
   // smart camera segmentation
   void initializeSegmentationMemoryMappedFile();
   void createSegmentationCamera();
@@ -149,6 +151,7 @@ private slots:
   void applyNearToWren() override;
   void applyFieldOfViewToWren() override;
   void applyCameraSettingsToWren() override;
+  void applyLensToWren() override;
   void updateFrustumDisplayIfNeeded(int optionalRendering) override;
   void updateOverlayMaskTexture();
 };

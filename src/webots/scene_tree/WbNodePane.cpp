@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,9 @@
 #include "WbField.hpp"
 #include "WbNodeEditor.hpp"
 #include "WbPhysicsViewer.hpp"
+#include "WbPose.hpp"
 #include "WbPositionViewer.hpp"
 #include "WbSolid.hpp"
-#include "WbTransform.hpp"
 #include "WbVelocityViewer.hpp"
 
 #include <QtWidgets/QHBoxLayout>
@@ -115,7 +115,7 @@ void WbNodePane::edit(bool copyOriginalValue) {
     mNodeEditor->edit(false);
     enableTab(NODE_TAB, mNodeEditor, true);
 
-    WbTransform *t = dynamic_cast<WbTransform *>(node);
+    WbPose *t = dynamic_cast<WbPose *>(node);
     WbSolid *s = dynamic_cast<WbSolid *>(node);
     mPhysicsViewer->show(s);
     mPositionViewer->show(t);

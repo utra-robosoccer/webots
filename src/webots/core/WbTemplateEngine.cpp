@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,11 +53,9 @@ void WbTemplateEngine::copyModuleToTemporaryFile(QString modulePath) {
     filters << "*.lua";
 #ifdef _WIN32
     filters << "*.dll";
-#endif
-#ifdef __linux__
+#elif defined(__linux__)
     filters << "*.so";
-#endif
-#ifdef __APPLE__
+#else  // __APPLE__
     filters << "*.dylib";
 #endif
     QFileInfoList files = luaModulesPath.entryInfoList(filters, QDir::Files | QDir::NoSymLinks);
@@ -68,7 +66,7 @@ void WbTemplateEngine::copyModuleToTemporaryFile(QString modulePath) {
 
 void WbTemplateEngine::initializeJavaScript() {
   // copy JavaScript modules to the temporary directory
-  QDirIterator it(WbStandardPaths::resourcesPath() + "javascript/", QDirIterator::Subdirectories);
+  QDirIterator it(WbStandardPaths::resourcesPath() + "web/wwi/protoVisualizer/templating/", QDirIterator::Subdirectories);
   while (it.hasNext()) {
     QDir jsModulesPath(it.next());
 
@@ -137,6 +135,11 @@ const QString &WbTemplateEngine::openingToken() {
 
 const QString &WbTemplateEngine::closingToken() {
   return gClosingToken;
+}
+
+QString WbTemplateEngine::escapeString(const QString &string) {
+  QString escaped(string);
+  return escaped.replace("\\", "\\\\").replace("\n", "\\n").replace("'", "\\'").toUtf8();
 }
 
 bool WbTemplateEngine::generate(QHash<QString, QString> tags, const QString &logHeaderName, const QString &templateLanguage) {
@@ -336,19 +339,13 @@ bool WbTemplateEngine::generateLua(QHash<QString, QString> tags, const QString &
 // Update 'package.cpath' variable to be able to load '*.dll' and '*.dylib'
 #ifdef _WIN32
   tags["cpath"] = "package.cpath = package.cpath .. \";?.dll\"";
-#endif
-#ifdef __linux__
+#elif defined(__linux__)
   tags["cpath"] = "";
-#endif
-#ifdef __APPLE__
+#else  // __APPLE__
   tags["cpath"] = "package.cpath = package.cpath .. \";?.dylib\"";
 #endif
 
-  tags["templateContent"] = mTemplateContent;
-  tags["templateContent"] = tags["templateContent"].replace("\\", "\\\\");
-  tags["templateContent"] = tags["templateContent"].replace("\n", "\\n");
-  tags["templateContent"] = tags["templateContent"].replace("'", "\\'");
-  tags["templateContent"] = tags["templateContent"].toUtf8();
+  tags["templateContent"] = escapeString(mTemplateContent);
 
   // make sure these key are set
   if (!tags.contains("fields"))

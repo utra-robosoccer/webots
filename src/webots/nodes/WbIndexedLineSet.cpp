@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -228,7 +228,7 @@ void WbIndexedLineSet::recomputeBoundingSphere() const {
   assert(mBoundingSphere);
   mBoundingSphere->empty();
 
-  if (!coord())
+  if (!coord() || mCoordIndex->isEmpty())
     return;
 
   const WbMFVector3 &points = coord()->point();
@@ -264,6 +264,12 @@ void WbIndexedLineSet::recomputeBoundingSphere() const {
     if (index >= 0 && index < points.size())  // skip '-1' or other invalid indices.
       mBoundingSphere->enclose(points.item(index));
   }
+}
+
+QStringList WbIndexedLineSet::fieldsToSynchronizeWithX3D() const {
+  QStringList fields;
+  fields << "coordIndex";
+  return fields;
 }
 
 ////////////////////////

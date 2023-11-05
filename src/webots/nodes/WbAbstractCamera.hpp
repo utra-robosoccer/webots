@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -114,11 +114,13 @@ protected:
   WbMemoryMappedFile *initializeMemoryMappedFile(const QString &id = "");
   virtual void computeValue();
   void copyImageToMemoryMappedFile(WbWrenCamera *camera, unsigned char *data);
-  void editChunkMetadata(WbDataStream &stream, int img_size);
+  void editChunkMetadata(WbDataStream &stream, int newImageSize);
 
   virtual bool antiAliasing() const { return false; }
 
   virtual int size() const = 0;
+
+  void applyCameraSettings();
 
   // Wren methods
   virtual void createWrenCamera();
@@ -183,7 +185,7 @@ protected slots:
   void updateMotionBlur();
   void updateNoise();
   void updateLens();
-  void applyLensToWren();
+  virtual void applyLensToWren();
   void removeInvisibleNodeFromList(QObject *node);
 
   virtual void updateFrustumDisplayIfNeeded(int optionalRendering) {}

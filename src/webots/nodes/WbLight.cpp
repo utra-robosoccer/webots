@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,11 +19,11 @@
 #include "WbMFColor.hpp"
 #include "WbNodeUtilities.hpp"
 #include "WbPerspective.hpp"
+#include "WbPose.hpp"
 #include "WbPreferences.hpp"
 #include "WbSFBool.hpp"
 #include "WbSFColor.hpp"
 #include "WbSFDouble.hpp"
-#include "WbTransform.hpp"
 #include "WbWorld.hpp"
 #include "WbWrenRenderingContext.hpp"
 
@@ -234,6 +234,9 @@ void WbLight::exportNodeFields(WbWriter &writer) const {
 QStringList WbLight::fieldsToSynchronizeWithX3D() const {
   QStringList fields;
   fields << "color"
-         << "on";
+         << "on"
+         << "intensity"
+         << "ambientIntensity"
+         << "castShadows";
   return fields;
 }

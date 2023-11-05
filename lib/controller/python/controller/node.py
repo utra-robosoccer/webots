@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -156,10 +156,11 @@ class Node:
     def getContactPoints(self, includeDescendants: bool = False) -> typing.List[ContactPoint]:
         size = ctypes.c_int(0)
         p = wb.wb_supervisor_node_get_contact_points(self._ref, 1 if includeDescendants else 0, ctypes.byref(size))
-        points = bytes(p[0:size.value * 28])
+        format_size = 32  # the C compiler adds some padding to the struct, so that its actual size is not 28 as it seems
+        points = bytes(p[0:format_size * size.value])
         contact_points = []
         for i in range(size.value):
-            contact_points.append(ContactPoint(struct.unpack_from('3di', points, 28 * i)))
+            contact_points.append(ContactPoint(struct.unpack_from('3di', points, format_size * i)))
         return contact_points
 
     def enableContactPointsTracking(self, samplingPeriod: int, includeDescendants: bool = False):
@@ -294,6 +295,7 @@ Node.ROTATIONAL_MOTOR = constant('NODE_ROTATIONAL_MOTOR')
 Node.SKIN = constant('NODE_SKIN')
 Node.SPEAKER = constant('NODE_SPEAKER')
 Node.TOUCH_SENSOR = constant('NODE_TOUCH_SENSOR')
+Node.VACUUM_GRIPPER = constant('NODE_VACUUM_GRIPPER')
 Node.BALL_JOINT = constant('NODE_BALL_JOINT')
 Node.BALL_JOINT_PARAMETERS = constant('NODE_BALL_JOINT_PARAMETERS')
 Node.CHARGER = constant('NODE_CHARGER')

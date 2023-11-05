@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -96,6 +96,9 @@ int main(int argc, char *argv[]) {
   free(new_path);
   if (!SetEnvironmentVariableW(L"QT_ENABLE_HIGHDPI_SCALING", L"1"))
     fail("SetEnvironmentVariableW", "QT_ENABLE_HIGHDPI_SCALING=1");
+
+  // if set, we need to remove this environment variable set by Qt5 which conflicts with Qt6
+  SetEnvironmentVariableW(L"QT_QPA_PLATFORM_PLUGIN_PATH", NULL);
 
   // start the webots-bin.exe process, wait for completion and return exit code
   STARTUPINFOW info = {sizeof(info)};

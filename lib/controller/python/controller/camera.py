@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -162,7 +162,9 @@ class Camera(Sensor):
 
     @property
     def segmentation_image(self) -> bytes:
-        wb.wb_camera_recognition_get_segmentation_image.restype = ctypes.POINTER(ctypes.c_ubyte * (4 * self.width * self.height))
+        wb.wb_camera_recognition_get_segmentation_image.restype = ctypes.POINTER(
+            ctypes.c_ubyte * (4 * self.width * self.height)
+        )
         return bytes(wb.wb_camera_recognition_get_segmentation_image(self._tag).contents)
 
     @property
